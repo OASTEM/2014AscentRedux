@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Timer;
 import org.oastem.frc.control.*;
+import org.oastem.frc.Debug;
 
 
 /**
@@ -25,6 +26,8 @@ public class RobotMain extends SimpleRobot {
     
     private DriveSystem ds;
     private Joystick js, js2;
+    
+    String[] debug = new String[6];
     
     private final int LEFT_DRIVE_PORT = 1;
     private final int RIGHT_DRIVE_PORT = 2;
@@ -40,6 +43,9 @@ public class RobotMain extends SimpleRobot {
         
         js = new Joystick(FIRST_JOYSTICK);
         js2 = new Joystick(SECOND_JOYSTICK);
+        
+        Debug.clear();
+        Debug.log(1, 1, "Robot initialized.");
     }
     
     /**
@@ -64,7 +70,10 @@ public class RobotMain extends SimpleRobot {
      */
     public void operatorControl() {
         while(isEnabled() && isOperatorControl()){
+            debug[1] = "Speed: " + js.getY() + ", " + js2.getY();
             ds.tankDrive(js.getY(), js2.getY());
+            
+            Debug.log(debug);
         }
     }
     
