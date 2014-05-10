@@ -8,9 +8,7 @@
 package org.oastem.frc.assist2;
 
 
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.SimpleRobot;
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.*;
 import org.oastem.frc.control.*;
 import org.oastem.frc.Debug;
 
@@ -27,6 +25,10 @@ public class RobotMain extends SimpleRobot {
     private DriveSystem ds;
     private Joystick js, js2;
     
+    private DigitalInput lim;
+    
+    private Jaguar motor1;
+    
     String[] debug = new String[6];
     
     private final int LEFT_DRIVE_PORT = 1;
@@ -35,7 +37,15 @@ public class RobotMain extends SimpleRobot {
     private final int FIRST_JOYSTICK = 1;
     private final int SECOND_JOYSTICK = 2;
     
+    private final int JOYSTICK_BUTTON = 2; 
+    
     private final double AUTO_SPEED = 0.5;
+    
+    private final int LIMIT_SWITCH_PORT = 1;
+    private final int JAGUAR_PORT = 1;
+    
+    private final int RUN_TIME = 5000;
+    
     
     public void robotInit(){
         ds = DriveSystem.getInstance();
@@ -43,6 +53,10 @@ public class RobotMain extends SimpleRobot {
         
         js = new Joystick(FIRST_JOYSTICK);
         js2 = new Joystick(SECOND_JOYSTICK);
+        
+        lim = new DigitalInput(LIMIT_SWITCH_PORT);
+        
+        motor1 = new Jaguar(JAGUAR_PORT);
         
         Debug.clear();
         Debug.log(1, 1, "Robot initialized.");
@@ -69,9 +83,28 @@ public class RobotMain extends SimpleRobot {
      * This function is called once each time the robot enters operator control.
      */
     public void operatorControl() {
+        long currentTime;
+        long startTime = 0;
+        boolean motorStart = false;
         while(isEnabled() && isOperatorControl()){
-            debug[1] = "Speed: " + js.getY() + ", " + js2.getY();
+            currentTime = System.currentTimeMillis();
+            debug[1] = "Drive Speed: " + js.getY() + ", " + js2.getY();
             ds.tankDrive(js.getY(), js2.getY());
+            
+            if (js.getRawButton(JOYSTICK_BUTTON) || motorStart){
+                if(!motorStart){
+                    motorStart = true;
+                    startTime = currentTime;
+                }
+                motor1.set(0.1);
+                if (!lim.get() || currentTime - startTime >= RUN_TIME){
+                    motor1.set(0.0);
+                    debug[2] = "Limit engaged, stopping motor at " + currentTime;
+                    motorStart = false;
+                } else {
+                    debug[2] = "Still going at time " + currentTime;
+                }
+            }
             
             Debug.log(debug);
         }
