@@ -9,8 +9,8 @@ package org.oastem.frc.assist2;
 
 
 import edu.wpi.first.wpilibj.*;
+
 import org.oastem.frc.control.*;
-import org.oastem.frc.Debug;
 
 
 /**
@@ -20,7 +20,7 @@ import org.oastem.frc.Debug;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
-public class RobotMain extends SimpleRobot {
+public class OldRobotMain extends SampleRobot {
     
     private DriveSystem ds;
     private Joystick js, js2;
@@ -58,8 +58,6 @@ public class RobotMain extends SimpleRobot {
         
         motor1 = new Jaguar(JAGUAR_PORT);
         
-        Debug.clear();
-        Debug.log(1, 1, "Robot initialized.");
     }
     
     /**
@@ -106,7 +104,6 @@ public class RobotMain extends SimpleRobot {
                 }
             }
             
-            Debug.log(debug);
         }
     }
     

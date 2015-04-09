@@ -5,6 +5,7 @@
 package org.oastem.frc.sensor;
 
 import edu.wpi.first.wpilibj.ADXL345_I2C;
+import edu.wpi.first.wpilibj.I2C.Port;
 
 /**
  * Custom class built that encloses the Accelerometer class in order to 
@@ -17,12 +18,12 @@ public class ADXL345Accelerometer {
     private double[] initialReadings;
     private double reactValue;
     
-    public ADXL345Accelerometer(int port) {
+    public ADXL345Accelerometer(Port port) {
         this(port, 0.02);
     }
     
-    public ADXL345Accelerometer(int port, double react) {
-        accel = new ADXL345_I2C(port, ADXL345_I2C.DataFormat_Range.k8G);
+    public ADXL345Accelerometer(Port port, double react) {
+        accel = new ADXL345_I2C(port, ADXL345_I2C.Range.k8G);//DataFormat_Range.k8G);
         initialReadings = new double[3];
         reactValue = react;
         
