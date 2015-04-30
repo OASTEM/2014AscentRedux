@@ -1,27 +1,46 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.oastem.frc.control;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Victor;
+import edu.wpi.first.wpilibj.RobotDrive.MotorType;
+
+import org.oastem.frc.sensor.*;
+
 import java.util.Hashtable;
 
 /**
- *
+ * Class to control the entirety of the drive train of an FRC robot.
+ * Originally designed by Kevin Tran for FRC 4079 in 2013: Ultimate Ascent.
+ * Modified by future years of FRC 4079.
+ * 
  * @author KTOmega
  */
 public class DriveSystem {
-    protected static DriveSystem instance;
-    protected RobotDrive drive;
-    protected Victor[] raw;
-    protected boolean hasSecondary = false;
-    protected RobotDrive drive2;
+    // Constants.
+    protected static final int NUM_ITEMS = 12;
+    protected static final double DISTANCE_PER_REVOLUTION = 6 * Math.PI; // FOR DEFAULT DRIVE WHEELS 
+    protected static final double AUTO_DRIVE_POWER = 0.65; // percentage between 0 and 1
+    protected static final double CORRECTION = .2;
+    protected static final double BUFFER = .5;
+    protected static final double COMPENSATION = 7;
+    
+    // Singleton design pattern: instance of this class.
+    // Only one drive system is allowed per robot - 
+    // if any class needs it, it can call the getInstance()
+    // method to use it.
+    private static DriveSystem instance;
+    
+    private RobotDrive drive;
+    private Victor[] raw;
+    private boolean hasSecondary = false;
+    private RobotDrive drive2;
+    
+    protected QuadratureEncoder encRight;
+    protected QuadratureEncoder encLeft;
     
     protected DriveSystem() {
-        raw = new Victor[12];
+        raw = new Victor[NUM_ITEMS];
     }
     
     public static DriveSystem getInstance() {
@@ -30,6 +49,26 @@ public class DriveSystem {
         }
         
         return instance;
+    }
+    
+    public void initializeEncoders(int rightChannelA, int rightChannelB, boolean rightReflected,
+    								int leftChannelA, int leftChannelB, boolean leftReflected, double pulsesPerRev) {
+        encRight = new QuadratureEncoder(rightChannelA, rightChannelB, rightReflected, 4, pulsesPerRev);
+        encLeft = new QuadratureEncoder(leftChannelA, leftChannelB, leftReflected, 4, pulsesPerRev);
+        encRight.setDistancePerPulse(DISTANCE_PER_REVOLUTION);
+        encLeft.setDistancePerPulse(DISTANCE_PER_REVOLUTION);
+        encRight.reset();
+        encLeft.reset();
+    }
+    
+    public double getRightEnc()
+    {
+    	return encRight.getDistance();
+    }
+    
+    public double getLeftEnc()
+    {
+    	return encLeft.getDistance();
     }
     
     public void initializeDrive(int leftFront, int leftRear, int rightFront, int rightRear) {
@@ -68,6 +107,11 @@ public class DriveSystem {
         if (hasSecondary) drive2.tankDrive(x, y);
     }
     
+    public void mecanumDrive(double x, double y, double turn, double gyro) {
+        drive.mecanumDrive_Cartesian(x, y, turn, gyro);
+        if (hasSecondary) drive2.mecanumDrive_Cartesian(x, y, turn, gyro);
+    }
+    
     public void addVictor(int port) {
         raw[port] = new Victor(port);
     }
@@ -84,8 +128,91 @@ public class DriveSystem {
         return raw[vic];
     }
     
-    public void setSafety(boolean b){
+    public void setSafety(boolean b) {
         drive.setSafetyEnabled(false);
         if (hasSecondary) drive2.setSafetyEnabled(false);
+    }
+
+    public void resetEncoders()
+    {
+    	encRight.reset();
+    	encLeft.reset();
+    }
+    
+    public boolean reverse(double distance) {
+        if ( (encRight.getDistance() > (-distance + COMPENSATION) ) || (encLeft.getDistance() > (-distance + COMPENSATION) ) ) {
+            drive.tankDrive(AUTO_DRIVE_POWER, AUTO_DRIVE_POWER);
+            /**********/
+            keepStraightBackward();
+            if (hasSecondary) drive2.tankDrive(AUTO_DRIVE_POWER, AUTO_DRIVE_POWER);
+            return false;
+        } else {
+            drive.tankDrive(0, 0);
+            return true;
+        }
+    }
+
+    public boolean forward(double distance) {
+        if ( (encRight.getDistance() < (distance - COMPENSATION) ) || (encLeft.getDistance() < (distance - COMPENSATION) ) ) {
+            drive.tankDrive(-AUTO_DRIVE_POWER, -AUTO_DRIVE_POWER);
+            /**********/
+            keepStraightForward();
+            if (hasSecondary) drive2.tankDrive(-AUTO_DRIVE_POWER, -AUTO_DRIVE_POWER);
+            return false;
+        } else {
+            drive.tankDrive(0, 0);
+            return true;
+        }
+    }
+    
+    /**** IMPLEMENT hasSecondary NEXT YEAR SPRING ****/
+    private void keepStraightForward()
+    {
+    	double rightVal = encRight.getDistance();
+    	double leftVal = encLeft.getDistance();
+    	// FORWARD
+    	if (leftVal + BUFFER < rightVal)
+    	{
+    		drive.tankDrive(-AUTO_DRIVE_POWER, -AUTO_DRIVE_POWER + CORRECTION);
+    	}
+    	else if (rightVal + BUFFER < leftVal)
+    	{
+    		drive.tankDrive(-AUTO_DRIVE_POWER + CORRECTION, -AUTO_DRIVE_POWER);
+    	}
+    	else
+    	{
+    		drive.tankDrive(-AUTO_DRIVE_POWER, -AUTO_DRIVE_POWER);
+    	}
+    }
+    
+    private void keepStraightBackward()
+    {
+    	double rightVal = encRight.getDistance();
+    	double leftVal = encLeft.getDistance();
+    	//BACKWARD
+    	if (leftVal < rightVal - BUFFER)
+    	{
+    		drive.tankDrive(AUTO_DRIVE_POWER - CORRECTION, AUTO_DRIVE_POWER);
+    	}
+    	else if (rightVal < leftVal - BUFFER)
+    	{
+    		drive.tankDrive(AUTO_DRIVE_POWER, AUTO_DRIVE_POWER - CORRECTION);
+    	}
+    	else
+    	{
+    		drive.tankDrive(AUTO_DRIVE_POWER, AUTO_DRIVE_POWER);
+    	}
+    }
+    
+    public void setInvertedDouble() {
+        drive.setInvertedMotor(MotorType.kRearLeft, true);
+        drive.setInvertedMotor(MotorType.kRearRight, true);
+    }
+    
+    public void setInvertedQuad() {
+        drive.setInvertedMotor(MotorType.kFrontLeft, true);
+        drive.setInvertedMotor(MotorType.kFrontRight, true);
+        drive.setInvertedMotor(MotorType.kRearLeft, true);
+        drive.setInvertedMotor(MotorType.kRearRight, true);
     }
 }

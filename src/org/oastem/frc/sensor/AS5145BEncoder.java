@@ -32,7 +32,7 @@ public class AS5145BEncoder {
         initialize();
     }
     public void initialize(){
-    	//e.start(); //ALWAYS START THE ENCODER!!!!111
+        //e.start(); //ALWAYS START THE ENCODER!!!!111
     	//NOT WITH 2015 RoboRIO!!!!!!!! - mduong15 
         e.reset();
     }

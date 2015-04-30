@@ -24,6 +24,13 @@ public class Accelerator {
         speed = accelerate(speed, commSpeed, (currTime - thisTime));
         return speed;
     }
+    
+    public double decelerateValue(double currSpeed, double commSpeed)
+    {
+    	currTime = System.currentTimeMillis();
+    	speed = accelerate(currSpeed, commSpeed, (currTime - thisTime));
+        return speed;
+    }
 
     private double accelerate(double currSpeed, double commandSpeed, long time) {
         System.out.println(currSpeed+" Distance/Time");

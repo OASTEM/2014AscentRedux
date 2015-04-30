@@ -1,39 +1,47 @@
 package org.oastem.frc.control;
 
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.RobotDrive;
-import edu.wpi.first.wpilibj.Victor;
-import java.util.Hashtable;
+import org.oastem.frc.sensor.*;
+
 
 /**
  * @author ThePotatoGuy
+ * @author joyhsu0504
  */
-public class DriveSystemAccel extends DriveSystem {
 
+public class DriveSystemAccel extends DriveSystem {
+    private static DriveSystemAccel instance;
+    
     private long currTime;
     private long thisTime;
     private double[] speed;
     private int[] locs;
     private Accelerator[] acceleration;
     private int locCount = 4;
-    private static DriveSystemAccel instance;
-
-    private DriveSystemAccel() {
+    
+    protected DriveSystemAccel(){
         super();
         currTime = System.currentTimeMillis();
         thisTime = currTime;
-        acceleration = new Accelerator[12];
-        speed = new double[12];
-        locs = new int[12];
+        acceleration = new Accelerator[NUM_ITEMS];
+        speed = new double[NUM_ITEMS];
+        locs = new int[NUM_ITEMS];
     }
-
-    public static DriveSystemAccel getAcceleratedInstance() {
+    
+    public static DriveSystemAccel getInstance() {
         if (instance == null) {
             instance = new DriveSystemAccel();
         }
+        
         return instance;
     }
-
+    
+    public void initializeEncoders(int rightChannelA, int rightChannelB, boolean rightReflected,
+								int leftChannelA, int leftChannelB, boolean leftReflected, double pulsesPerRev) {
+        super.initializeEncoders(rightChannelA, rightChannelB, rightReflected,
+						leftChannelA, leftChannelB, leftReflected, pulsesPerRev);
+    }
+    
     public void initializeDrive(int leftFront, int leftRear, int rightFront, int rightRear) {
         locs[0] = leftFront;
         //locs[1] = leftRear;
@@ -46,14 +54,6 @@ public class DriveSystemAccel extends DriveSystem {
         super.initializeDrive(leftFront, leftRear, rightFront, rightRear);
     }
     
-    public void initializeDrive(int left, int right){
-        locs[0] = left;
-        locs[2] = right;
-        acceleration[left] =  new Accelerator();
-        acceleration[right] = new Accelerator();
-        super.initializeDrive(left, right);
-    }
-
     public void initializeSecondaryDrive(int l2, int r2) {
         locs[locCount++] = l2;
         acceleration[l2] = new Accelerator();
@@ -61,31 +61,55 @@ public class DriveSystemAccel extends DriveSystem {
         acceleration[r2] = new Accelerator();
         super.initializeSecondaryDrive(l2, r2);
     }
-
+    
     public void addVictor(int port) {
         locs[locCount++] = port;
         //acceleration[port] = new Accelerator();
         super.addVictor(port);
     }
-
+    
     public void set(int vic, double power) {
         speed[locs[vic]] = power;
-        super.set(vic, power);
+        super.set(vic,power);
     }
     
-    //public void setMotorDecelSkip(int vic, boolean skip){
-    //    acceleleration[locs[vic]].skipDecel(skip);
-    //}
-
-    public void tankDrive(double x, double y, boolean skip) {
-        if(!skip){
-            x = acceleration[locs[0]].accelerateValue(x);
-            y = acceleration[locs[2]].accelerateValue(y);
-        }
-        super.tankDrive(x, y);
+    public void accelTankDrive(double x, double y) {
+        x = acceleration[locs[0]].accelerateValue(x);
+        y = acceleration[locs[2]].accelerateValue(y);
+        super.tankDrive(x,y);
+    }
+    
+    public void regTankDrive(double x, double y){
+    	super.tankDrive(x,y);
     }
 
-    public double getAccelSpeed(int port) {
-        return acceleration[port].getSpeed();
+    public boolean drive(double distance, double x, double y) {
+        super.resetEncoders();
+        x = acceleration[locs[0]].accelerateValue(0.5);
+        y = acceleration[locs[2]].accelerateValue(0.5);
+        if (encRight.getDistance() < distance) {
+            super.arcadeDrive(x, y);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public boolean back(double distance, double x, double y) {
+        super.resetEncoders();
+        x = acceleration[locs[0]].accelerateValue(-0.5);
+        y = acceleration[locs[2]].accelerateValue(-0.5);
+        if (Math.abs(encRight.getDistance()) < distance) {
+            super.arcadeDrive(x, y);
+            return false;
+        } else {
+            return true;
+        }
+    }
+    
+
+    public double getAccelSpeed(int port){
+        return acceleration[locs[port]].getSpeed();
     }
 }
+
