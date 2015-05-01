@@ -35,10 +35,10 @@ import org.oastem.frc.control.Accelerator;
  */
 public class Robot extends SampleRobot {
 	// MOTOR PORTS
-		private static final int DRIVE_RIGHT_FRONT_PORT = 2;
-		private static final int DRIVE_RIGHT_BACK_PORT = 3;
-		private static final int DRIVE_LEFT_FRONT_PORT = 0;
-		private static final int DRIVE_LEFT_BACK_PORT = 1;
+		private static final int DRIVE_RIGHT_FRONT_PORT = 0;
+		private static final int DRIVE_RIGHT_BACK_PORT = 1;
+		private static final int DRIVE_LEFT_FRONT_PORT = 2;
+		private static final int DRIVE_LEFT_BACK_PORT = 3;
 
 		// SENSOR PORTS
 		//Jaguar CAN IDs
@@ -56,9 +56,12 @@ public class Robot extends SampleRobot {
 
 
 		// JOYSTICK BUTTONS
-		private static final int TOGGLE_WHEEL = 1;
+		private static final int TOGGLE_WHEEL_BUTTON = 2;
+		private static final int SHOOTER_ARM_UP_BUTTON = 3;
+		private static final int SHOOTER_ARM_DOWN_BUTTON = 2;
 		
 		// CONSTANTS
+		private static final double SHOOTER_ARM_POWER = 0.3;
 
 		// instance variables
 		private static double joyScale = 1.0;
@@ -75,6 +78,7 @@ public class Robot extends SampleRobot {
 		private PowerDistributionPanel power;
 		private Accelerator accel;
 		
+		
 		public void robotInit() {
 			
 			// Initialize Drive
@@ -90,6 +94,7 @@ public class Robot extends SampleRobot {
 			shooterArm = new CANJaguar(SHOOTER_ARM_CAN_ID);
 
 			shooterWheel.setPercentMode();
+			shooterWheel.enableControl();
 			
 			joyjoyRight = new Joystick(0);
 			joyjoyLeft = new Joystick(1);
@@ -124,20 +129,29 @@ public class Robot extends SampleRobot {
 					 drive.tankDrive(-joyjoyLeft.getY() * scaleZ(joyjoyRight.getZ()), -joyjoyRight.getY() * scaleZ(joyjoyRight.getZ()));
 				}
 				
-				if (!joyjoyRight.getRawButton(TOGGLE_WHEEL)){
+				if (!joyjoyRight.getRawButton(TOGGLE_WHEEL_BUTTON)){
 					canPressWheel = true;
 				}
-				else if (canPressWheel && joyjoyRight.getRawButton(TOGGLE_WHEEL)){
+				else if (canPressWheel && joyjoyRight.getRawButton(TOGGLE_WHEEL_BUTTON)){
 					canPressWheel = false;
 					shooterWheelOn = !shooterWheelOn;
 				}
 				
 				if (shooterWheelOn){
-					shooterWheel.set(accel.accelerateValue(1));
+					shooterWheel.set(accel.accelerateValue(-scaleZ(joyjoyLeft.getZ())));
 				}
 				else {
 					shooterWheel.set(0);
 				}
+				
+				if (joyjoyLeft.getRawButton(SHOOTER_ARM_UP_BUTTON))
+					shooterArm.set(SHOOTER_ARM_POWER);
+				else if (joyjoyLeft.getRawButton(SHOOTER_ARM_DOWN_BUTTON))
+					shooterArm.set(-SHOOTER_ARM_POWER);
+				else
+					shooterArm.set(0);
+				
+				
 					
 			}
 		}

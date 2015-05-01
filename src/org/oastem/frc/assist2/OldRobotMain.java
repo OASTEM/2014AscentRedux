@@ -63,6 +63,7 @@ public class OldRobotMain extends SampleRobot {
     /**
      * This function is called once each time the robot enters autonomous mode.
      */
+
     public void autonomous() {
         //move forward
         ds.tankDrive(AUTO_SPEED, AUTO_SPEED);
