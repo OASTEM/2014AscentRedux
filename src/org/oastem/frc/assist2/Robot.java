@@ -5,6 +5,7 @@ package org.oastem.frc.assist2;
 import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.RobotDrive;
@@ -56,9 +57,12 @@ public class Robot extends SampleRobot {
 
 
 		// JOYSTICK BUTTONS
-		private static final int TOGGLE_WHEEL_BUTTON = 2;
+		private static final int TOGGLE_WHEEL_BUTTON = 1;
+		private static final int FIRE_FRISBEE_BUTTON = 1;
 		private static final int SHOOTER_ARM_UP_BUTTON = 3;
 		private static final int SHOOTER_ARM_DOWN_BUTTON = 2;
+		private static final int ACTUATOR_UP_BUTTON = 3;
+		private static final int ACTUATOR_DOWN_BUTTON = 2;
 		
 		// CONSTANTS
 		private static final double SHOOTER_ARM_POWER = 0.3;
@@ -77,6 +81,7 @@ public class Robot extends SampleRobot {
 		private Dashboard dash;
 		private PowerDistributionPanel power;
 		private Accelerator accel;
+		private DoubleSolenoid actuator;
 		
 		
 		public void robotInit() {
@@ -101,6 +106,8 @@ public class Robot extends SampleRobot {
 			
 			accel = new Accelerator();
 			
+			actuator = new DoubleSolenoid(0, 1);
+			
 			dash = new Dashboard();
 			dash.putString("Mode:", "Auto");
 			System.out.println("Robot Initialized");
@@ -122,17 +129,44 @@ public class Robot extends SampleRobot {
 			boolean hasDrive = true;
 			boolean shooterWheelOn = false;
 			boolean canPressWheel = true;
+			boolean isShooting = false;
+			boolean reverseArmPressed = true;
 
 			while (isOperatorControl() && isEnabled()) {
 				
+				// drive
 				if (hasDrive) {
 					 drive.tankDrive(-joyjoyLeft.getY() * scaleZ(joyjoyRight.getZ()), -joyjoyRight.getY() * scaleZ(joyjoyRight.getZ()));
 				}
+
 				
-				if (!joyjoyRight.getRawButton(TOGGLE_WHEEL_BUTTON)){
+				// Firing frisbee
+				/*
+				if (joyjoyRight.getRawButton(FIRE_FRISBEE_BUTTON))
+					isShooting = true;
+				
+				if (isShooting)
+				{
+					reverseArmPressed = false;
+					shooterArm.set(SHOOTER_ARM_POWER);
+					if (!shooterArm.getForwardLimitOK())
+						isShooting = false;
+				}
+				else if (!reverseArmPressed)
+				{
+					shooterArm.set(-SHOOTER_ARM_POWER);
+					if (!shooterArm.getReverseLimitOK())
+						reverseArmPressed = true;
+				}
+				else
+					shooterArm.set(0);
+				//*/
+				
+				// shooting wheel
+				if (!joyjoyLeft.getRawButton(TOGGLE_WHEEL_BUTTON)){
 					canPressWheel = true;
 				}
-				else if (canPressWheel && joyjoyRight.getRawButton(TOGGLE_WHEEL_BUTTON)){
+				else if (canPressWheel && joyjoyLeft.getRawButton(TOGGLE_WHEEL_BUTTON)){
 					canPressWheel = false;
 					shooterWheelOn = !shooterWheelOn;
 				}
@@ -144,12 +178,21 @@ public class Robot extends SampleRobot {
 					shooterWheel.set(0);
 				}
 				
+				// backup manual shooting arm
 				if (joyjoyLeft.getRawButton(SHOOTER_ARM_UP_BUTTON))
 					shooterArm.set(SHOOTER_ARM_POWER);
 				else if (joyjoyLeft.getRawButton(SHOOTER_ARM_DOWN_BUTTON))
 					shooterArm.set(-SHOOTER_ARM_POWER);
 				else
 					shooterArm.set(0);
+				
+				// actuators
+				if (joyjoyRight.getRawButton(ACTUATOR_UP_BUTTON))
+					actuator.set(DoubleSolenoid.Value.kForward);
+				else if (joyjoyRight.getRawButton(ACTUATOR_DOWN_BUTTON))
+					actuator.set(DoubleSolenoid.Value.kReverse);
+				else
+					actuator.set(DoubleSolenoid.Value.kOff);
 				
 				
 					
