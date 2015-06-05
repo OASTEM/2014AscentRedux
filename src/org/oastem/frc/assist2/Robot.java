@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.RobotDrive;
@@ -63,6 +64,10 @@ public class Robot extends SampleRobot {
 		private static final int SHOOTER_ARM_DOWN_BUTTON = 2;
 		private static final int ACTUATOR_UP_BUTTON = 3;
 		private static final int ACTUATOR_DOWN_BUTTON = 2;
+		private static final int FIRST_SOLENOID_FORWARD = 2;
+		private static final int FIRST_SOLENOID_REVERSE = 3;
+		private static final int SECOND_SOLENOID_FORWARD = 2;
+		private static final int SECOND_SOLENOID_REVERSE = 3;
 		
 		// CONSTANTS
 		private static final double SHOOTER_ARM_POWER = 0.3;
@@ -82,6 +87,7 @@ public class Robot extends SampleRobot {
 		private PowerDistributionPanel power;
 		private Accelerator accel;
 		private DoubleSolenoid actuator;
+		private Solenoid actuator2;
 		
 		
 		public void robotInit() {
@@ -106,6 +112,7 @@ public class Robot extends SampleRobot {
 			
 			accel = new Accelerator();
 			
+			actuator2 = new Solenoid(2);
 			actuator = new DoubleSolenoid(0, 1);
 			
 			dash = new Dashboard();
@@ -131,6 +138,8 @@ public class Robot extends SampleRobot {
 			boolean canPressWheel = true;
 			boolean isShooting = false;
 			boolean reverseArmPressed = true;
+			boolean pistonMoving = false;
+			boolean pressCheck = false;
 
 			while (isOperatorControl() && isEnabled()) {
 				
@@ -163,6 +172,7 @@ public class Robot extends SampleRobot {
 				//*/
 				
 				// shooting wheel
+				/*
 				if (!joyjoyLeft.getRawButton(TOGGLE_WHEEL_BUTTON)){
 					canPressWheel = true;
 				}
@@ -185,15 +195,67 @@ public class Robot extends SampleRobot {
 					shooterArm.set(-SHOOTER_ARM_POWER);
 				else
 					shooterArm.set(0);
+				*/
 				
 				// actuators
-				if (joyjoyRight.getRawButton(ACTUATOR_UP_BUTTON))
+				/* if (joyjoyRight.getRawButton(ACTUATOR_UP_BUTTON))
 					actuator.set(DoubleSolenoid.Value.kForward);
 				else if (joyjoyRight.getRawButton(ACTUATOR_DOWN_BUTTON))
 					actuator.set(DoubleSolenoid.Value.kReverse);
 				else
 					actuator.set(DoubleSolenoid.Value.kOff);
+				*/
 				
+				//This block uses the second solenoid to stop air from going out. The first solenoid is then turned off.
+				/*if (pressCheck && pistonMoving && (joyjoyRight.getRawButton(ACTUATOR_UP_BUTTON) || joyjoyRight.getRawButton(ACTUATOR_DOWN_BUTTON))){
+					System.out.println("Piston is not moving");
+					pressCheck = false;
+					actuator.set(DoubleSolenoid.Value.kOff);
+					actuator2.set(DoubleSolenoid.Value.kReverse);
+					pistonMoving = false;
+				}*/
+				
+				//This block uses the buttons in order to control the motion of the piston and then recognizes the piston as moving.
+				//else 
+				/*
+					if (pressCheck && (joyjoyRight.getRawButton(ACTUATOR_UP_BUTTON) || joyjoyRight.getRawButton(ACTUATOR_DOWN_BUTTON))) {
+					pressCheck = false;
+					if (joyjoyRight.getRawButton(ACTUATOR_UP_BUTTON)){
+						System.out.println("Piston is going up");
+						actuator.set(DoubleSolenoid.Value.kForward);
+						pistonMoving = true;
+					}
+					else if (joyjoyRight.getRawButton(ACTUATOR_DOWN_BUTTON)){
+						System.out.println("Piston is going down");
+						actuator2.set(DoubleSolenoid.Value.kForward);
+						actuator.set(DoubleSolenoid.Value.kReverse);
+						pistonMoving = true;
+					}
+				}
+				
+				//This provides a check so that the robot will not continuously cycle through loops and constantly stop moving and begin moving.
+				if (!(joyjoyRight.getRawButton(ACTUATOR_UP_BUTTON) || joyjoyRight.getRawButton(ACTUATOR_DOWN_BUTTON))){
+					pressCheck = true;
+				}
+				*/
+				
+				//TESTING
+				if (joyjoyRight.getRawButton(FIRST_SOLENOID_FORWARD))
+					actuator.set(DoubleSolenoid.Value.kForward);
+				else if (joyjoyRight.getRawButton(FIRST_SOLENOID_REVERSE))
+					actuator.set(DoubleSolenoid.Value.kReverse);
+				else
+					actuator.set(DoubleSolenoid.Value.kOff);
+
+				if (joyjoyLeft.getRawButton(SECOND_SOLENOID_FORWARD))
+					actuator2.set(true);
+				else if (joyjoyLeft.getRawButton(SECOND_SOLENOID_REVERSE))
+					actuator2.set(false);
+				
+				dash.putBoolean("pressCheck", pressCheck);
+				dash.putBoolean("pistonMoving", pistonMoving);
+				dash.putBoolean("ACTUATOR_UP_BUTTON", joyjoyRight.getRawButton(ACTUATOR_UP_BUTTON));
+				dash.putBoolean("ACTUATOR_DOWN_BUTTON", joyjoyRight.getRawButton(ACTUATOR_DOWN_BUTTON));
 				
 					
 			}
