@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.SampleRobot;
@@ -18,6 +19,7 @@ import org.oastem.frc.control.DriveSystem;
 import org.oastem.frc.control.DriveSystemAccel;
 import org.oastem.frc.sensor.QuadratureEncoder;
 import org.oastem.frc.control.Accelerator;
+import org.oastem.frc.sensor.ADXL345Accelerometer;
 
 /**
  * This is a demo program showing the use of the RobotDrive class.
@@ -88,6 +90,7 @@ public class Robot extends SampleRobot {
 		private Accelerator accel;
 		private DoubleSolenoid actuator;
 		private Solenoid actuator2;
+		private ADXL345Accelerometer accelerometer;
 		
 		
 		public void robotInit() {
@@ -111,6 +114,7 @@ public class Robot extends SampleRobot {
 			joyjoyLeft = new Joystick(1);
 			
 			accel = new Accelerator();
+			accelerometer = new ADXL345Accelerometer(I2C.Port.kOnboard);
 			
 			actuator2 = new Solenoid(2);
 			actuator = new DoubleSolenoid(0, 1);
@@ -240,6 +244,10 @@ public class Robot extends SampleRobot {
 				*/
 				
 				//TESTING
+				dash.putNumber("X Value", accelerometer.getX());
+				dash.putNumber("Y Value", accelerometer.getY());
+				dash.putNumber("Z Value", accelerometer.getZ());
+				
 				if (joyjoyRight.getRawButton(FIRST_SOLENOID_FORWARD))
 					actuator.set(DoubleSolenoid.Value.kForward);
 				else if (joyjoyRight.getRawButton(FIRST_SOLENOID_REVERSE))
