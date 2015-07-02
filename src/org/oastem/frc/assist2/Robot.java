@@ -66,16 +66,18 @@ public class Robot extends SampleRobot {
 		private static final int SHOOTER_ARM_DOWN_BUTTON = 2;
 		private static final int ACTUATOR_UP_BUTTON = 3;
 		private static final int ACTUATOR_DOWN_BUTTON = 2;
-		private static final int FIRST_SOLENOID_FORWARD = 2;
-		private static final int FIRST_SOLENOID_REVERSE = 3;
-		private static final int SECOND_SOLENOID_FORWARD = 2;
-		private static final int SECOND_SOLENOID_REVERSE = 3;
+		private static final int FIRST_SOLENOID_FORWARD = 3;
+		private static final int FIRST_SOLENOID_REVERSE = 2;
+		private static final int SECOND_SOLENOID_FORWARD = 3;
+		private static final int SECOND_SOLENOID_REVERSE = 2;
 		
 		// CONSTANTS
 		private static final double SHOOTER_ARM_POWER = 0.3;
 
 		// instance variables
 		private static double joyScale = 1.0;
+		private static double accelAvg = 0.0;
+		private static double[] accelAvgs = new double[15];
 		
 		// MOTORS
 		private CANJaguar shooterWheel;
@@ -247,17 +249,19 @@ public class Robot extends SampleRobot {
 				dash.putNumber("X Value", accelerometer.getX());
 				dash.putNumber("Y Value", accelerometer.getY());
 				dash.putNumber("Z Value", accelerometer.getZ());
+				dash.putNumber("First average (equation):", accelAvgOne());
+				dash.putNumber("Second average (array):", accelAvgTwo());
 				
 				if (joyjoyRight.getRawButton(FIRST_SOLENOID_FORWARD))
 					actuator.set(DoubleSolenoid.Value.kForward);
-				else if (joyjoyRight.getRawButton(FIRST_SOLENOID_REVERSE))
-					actuator.set(DoubleSolenoid.Value.kReverse);
+				else if (actuator.get().equals(DoubleSolenoid.Value.kReverse) || actuator.get().equals(DoubleSolenoid.Value.kOff))//joyjoyRight.getRawButton(FIRST_SOLENOID_REVERSE))
+					actuator.set(DoubleSolenoid.Value.kOff);//Reverse);
 				else
-					actuator.set(DoubleSolenoid.Value.kOff);
+					actuator.set(DoubleSolenoid.Value.kReverse);
 
 				if (joyjoyLeft.getRawButton(SECOND_SOLENOID_FORWARD))
 					actuator2.set(true);
-				else if (joyjoyLeft.getRawButton(SECOND_SOLENOID_REVERSE))
+				else// if (joyjoyLeft.getRawButton(SECOND_SOLENOID_REVERSE))
 					actuator2.set(false);
 				
 				dash.putBoolean("pressCheck", pressCheck);
@@ -267,6 +271,32 @@ public class Robot extends SampleRobot {
 				
 					
 			}
+		}
+		
+		private double accelAvgOne()
+		{
+			accelAvg = (accelAvg * 49 + accelerometer.getZ()) / 50;
+			return accelAvg;	
+		}
+		
+		private double accelAvgTwo()
+		{
+			for (int i = accelAvgs.length - 1; i > 0; i--)
+			{
+				accelAvgs[i] = accelAvgs[i - 1];
+			}
+			accelAvgs[0] = accelerometer.getZ();
+			return calcAvg();
+		}
+		
+		private double calcAvg()
+		{
+			double sum = 0;
+			for (int i = 0; i < accelAvgs.length; i++) 
+			{
+				sum += accelAvgs[i];
+			}
+			return sum / 15;
 		}
 		
 		private double scaleZ(double rawZ) {
