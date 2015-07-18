@@ -1,6 +1,10 @@
 
 package org.oastem.frc.assist2;
 
+import java.nio.ByteBuffer;
+
+import com.ni.vision.NIVision;
+import com.ni.vision.NIVision.*;
 
 import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.CameraServer;
@@ -13,6 +17,9 @@ import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.networktables.*;
+import edu.wpi.first.wpilibj.networktables2.*;
+import edu.wpi.first.wpilibj.vision.*;
 
 import org.oastem.frc.Dashboard;
 import org.oastem.frc.control.DriveSystem;
@@ -77,7 +84,7 @@ public class Robot extends SampleRobot {
 		// instance variables
 		private static double joyScale = 1.0;
 		private static double accelAvg = 0.0;
-		private static double[] accelAvgs = new double[15];
+		private static double[] accelAvgs = new double[50];
 		
 		// MOTORS
 		private CANJaguar shooterWheel;
@@ -93,7 +100,11 @@ public class Robot extends SampleRobot {
 		private DoubleSolenoid actuator;
 		private Solenoid actuator2;
 		private ADXL345Accelerometer accelerometer;
-		
+		private CameraServer camera;
+		private USBCamera camera2;
+		private NetworkTable tables;
+		private Image image;
+		private Image lmao;
 		
 		public void robotInit() {
 			
@@ -101,7 +112,20 @@ public class Robot extends SampleRobot {
 			drive = DriveSystemAccel.getInstance();
 			drive.initializeDrive(DRIVE_LEFT_FRONT_PORT, DRIVE_LEFT_BACK_PORT, DRIVE_RIGHT_FRONT_PORT, DRIVE_RIGHT_BACK_PORT);
 			drive.setSafety(false);
-
+			
+			// Initialize camera 
+			/*
+			camera = CameraServer.getInstance();
+			camera.setQuality(50);
+			camera.startAutomaticCapture("cam0");
+			*/
+			camera2 = new USBCamera("cam0");
+			camera2.openCamera();
+			camera2.startCapture();
+			
+			image = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
+			camera2.getImage(image);
+			
 			// Used to display PDP on Dashboard
 			power = new PowerDistributionPanel();
 			power.clearStickyFaults();
@@ -125,7 +149,11 @@ public class Robot extends SampleRobot {
 			dash.putString("Mode:", "Auto");
 			System.out.println("Robot Initialized");
 			
-		
+			//tables = NetworkTable.getTable("swag");
+			//tables.putValue("urmum", image);
+			//lmao = (Image)tables.getValue("urmum");
+			dash.putString("image1", image.toString());
+			//dash.putString("image2", lmao.toString());
 		}
 
 		public void autonomous() {
@@ -258,7 +286,7 @@ public class Robot extends SampleRobot {
 					actuator.set(DoubleSolenoid.Value.kOff);//Reverse);
 				else
 					actuator.set(DoubleSolenoid.Value.kReverse);
-
+				
 				if (joyjoyLeft.getRawButton(SECOND_SOLENOID_FORWARD))
 					actuator2.set(true);
 				else// if (joyjoyLeft.getRawButton(SECOND_SOLENOID_REVERSE))
@@ -296,7 +324,7 @@ public class Robot extends SampleRobot {
 			{
 				sum += accelAvgs[i];
 			}
-			return sum / 15;
+			return sum / accelAvgs.length;
 		}
 		
 		private double scaleZ(double rawZ) {
